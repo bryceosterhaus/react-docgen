@@ -8,7 +8,7 @@
 
 jest.mock('../../Documentation');
 
-import { parse } from '../../../tests/utils';
+import { parse, noopImporter, makeMockImporter } from '../../../tests/utils';
 
 describe('componentDocblockHandler', () => {
   let documentation;
@@ -19,12 +19,17 @@ describe('componentDocblockHandler', () => {
     return programPath.get('body', programPath.node.body.length - 1);
   }
 
+  function beforeLastStatement(src) {
+    const programPath = parse(src);
+    return programPath.get('body', programPath.node.body.length - 2);
+  }
+
   beforeEach(() => {
     documentation = new (require('../../Documentation'))();
     componentDocblockHandler = require('../componentDocblockHandler').default;
   });
 
-  function test(definitionSrc, parseFunc) {
+  function test(definitionSrc, parseFunc: string => NodePath) {
     it('finds docblocks for component definitions', () => {
       const definition = parseFunc(`
         import something from 'somewhere';
@@ -35,7 +40,7 @@ describe('componentDocblockHandler', () => {
         ${definitionSrc}
       `);
 
-      componentDocblockHandler(documentation, definition);
+      componentDocblockHandler(documentation, definition, noopImporter);
       expect(documentation.description).toBe('Component description');
     });
 
@@ -49,7 +54,7 @@ describe('componentDocblockHandler', () => {
         ${definitionSrc}
       `);
 
-      componentDocblockHandler(documentation, definition);
+      componentDocblockHandler(documentation, definition, noopImporter);
       expect(documentation.description).toBe('');
 
       definition = parseFunc(`
@@ -57,7 +62,7 @@ describe('componentDocblockHandler', () => {
         ${definitionSrc}
       `);
 
-      componentDocblockHandler(documentation, definition);
+      componentDocblockHandler(documentation, definition, noopImporter);
       expect(documentation.description).toBe('');
     });
 
@@ -72,7 +77,7 @@ describe('componentDocblockHandler', () => {
         ${definitionSrc}
       `);
 
-      componentDocblockHandler(documentation, definition);
+      componentDocblockHandler(documentation, definition, noopImporter);
       expect(documentation.description).toBe('');
     });
   }
@@ -95,7 +100,7 @@ describe('componentDocblockHandler', () => {
           ${classSrc}
         `);
 
-        componentDocblockHandler(documentation, definition);
+        componentDocblockHandler(documentation, definition, noopImporter);
         expect(documentation.description).toBe('Component description');
       });
 
@@ -115,33 +120,106 @@ describe('componentDocblockHandler', () => {
           ${classSrc}
         `);
 
-        componentDocblockHandler(documentation, definition);
+        componentDocblockHandler(documentation, definition, noopImporter);
         expect(documentation.description).toBe('Component description');
       });
+    });
+  }
+
+  function testImports(exportSrc, parseFunc, importName, useDefault = false) {
+    const importDef = useDefault ? `${importName}` : `{ ${importName} }`;
+
+    const mockImporter = makeMockImporter({
+      test1: parseFunc(`
+        /**
+        * Component description
+        */
+        ${exportSrc}
+      `),
+
+      test2: lastStatement(`
+        import ${importDef} from 'test1';
+
+        export default ${importName};
+      `).get('declaration'),
+    });
+
+    describe('imports', () => {
+      it('can use a custom importer to resolve docblocks on imported components', () => {
+        const program = lastStatement(`
+          import ${importDef} from 'test1';
+
+          export default ${importName};
+        `).get('declaration');
+
+        componentDocblockHandler(documentation, program, mockImporter);
+        expect(documentation.description).toBe('Component description');
+      });
+    });
+
+    it('traverses multiple imports', () => {
+      const program = lastStatement(`
+        import ${importDef} from 'test2';
+
+        export default ${importName};
+      `).get('declaration');
+
+      componentDocblockHandler(documentation, program, mockImporter);
+      expect(documentation.description).toBe('Component description');
     });
   }
 
   describe('React.createClass', () => {
     test('var Component = React.createClass({})', src =>
       lastStatement(src).get('declarations', 0, 'init', 'arguments', 0));
+    testImports(
+      'export var Component = React.createClass({})',
+      src => lastStatement(src).get('declaration'),
+      'Component',
+    );
   });
 
   describe('ClassDeclaration', () => {
     test('class Component {}', src => lastStatement(src));
     testDecorators('class Component {}', src => lastStatement(src));
+    testImports(
+      'export class Component {}',
+      src => lastStatement(src).get('declaration'),
+      'Component',
+    );
   });
 
   describe('ClassExpression', () => {
     test('var Component = class {};', src =>
       lastStatement(src).get('declarations', 0, 'init'));
+    testImports(
+      'export var Component = class {};',
+      src => lastStatement(src).get('declaration'),
+      'Component',
+    );
   });
 
   describe('Stateless functions', () => {
     test('function Component() {}', src => lastStatement(src));
+    testImports(
+      'export function Component() {}',
+      src => lastStatement(src).get('declaration'),
+      'Component',
+    );
     test('var Component = function () {};', src =>
       lastStatement(src).get('declarations', 0, 'init'));
+    testImports(
+      'export var Component = function () {};',
+      src => lastStatement(src).get('declaration'),
+      'Component',
+    );
     test('var Component = () => {}', src =>
       lastStatement(src).get('declarations', 0, 'init'));
+    testImports(
+      'export var Component = () => {}',
+      src => lastStatement(src).get('declaration'),
+      'Component',
+    );
   });
 
   describe('ES6 default exports', () => {
@@ -226,6 +304,44 @@ describe('componentDocblockHandler', () => {
         test('export var Component = () => {}', src =>
           lastStatement(src).get('declaration'));
       });
+    });
+  });
+
+  describe('forwardRef', () => {
+    const useDefault = true;
+
+    describe('inline implementation', () => {
+      test(`
+        React.forwardRef((props, ref) => {});
+        import React from "react";`, src =>
+        beforeLastStatement(src).get('expression'));
+
+      testImports(
+        `
+        export default React.forwardRef((props, ref) => {});
+        import React from 'react';`,
+        src => beforeLastStatement(src).get('declaration'),
+        'RefComponent',
+        useDefault,
+      );
+    });
+
+    describe('out of line implementation', () => {
+      test(`let Component = (props, ref) => {};
+        React.forwardRef(Component);
+        import React from "react";
+        `, src => beforeLastStatement(src).get('expression'));
+
+      testImports(
+        `
+        let Component = (props, ref) => {};
+        export default React.forwardRef(Component);
+        import React from 'react';
+        `,
+        src => beforeLastStatement(src).get('declaration'),
+        `RefComponent`,
+        useDefault,
+      );
     });
   });
 });

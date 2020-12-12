@@ -7,13 +7,12 @@
  * @flow
  */
 
-import types from 'ast-types';
+import { namedTypes as t } from 'ast-types';
 import isReactModuleName from './isReactModuleName';
 import match from './match';
 import resolveToModule from './resolveToModule';
 import resolveToValue from './resolveToValue';
-
-const { namedTypes: t } = types;
+import type { Importer } from '../types';
 
 /**
  * Returns true if the expression is a function call of the form
@@ -22,18 +21,19 @@ const { namedTypes: t } = types;
 export default function isReactBuiltinCall(
   path: NodePath,
   name: string,
+  importer: Importer,
 ): boolean {
   if (t.ExpressionStatement.check(path.node)) {
     path = path.get('expression');
   }
 
   if (match(path.node, { callee: { property: { name } } })) {
-    const module = resolveToModule(path.get('callee', 'object'));
+    const module = resolveToModule(path.get('callee', 'object'), importer);
     return Boolean(module && isReactModuleName(module));
   }
 
   if (t.CallExpression.check(path.node)) {
-    const value = resolveToValue(path.get('callee'));
+    const value = resolveToValue(path.get('callee'), importer);
     if (value === path.get('callee')) return false;
 
     if (
@@ -47,7 +47,7 @@ export default function isReactBuiltinCall(
           specifier => specifier.imported && specifier.imported.name === name,
         ))
     ) {
-      const module = resolveToModule(value);
+      const module = resolveToModule(value, importer);
       return Boolean(module && isReactModuleName(module));
     }
   }

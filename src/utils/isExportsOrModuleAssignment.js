@@ -7,16 +7,18 @@
  * @flow
  */
 
-import types from 'ast-types';
+import { namedTypes as t } from 'ast-types';
 import * as expressionTo from './expressionTo';
-
-const { namedTypes: t } = types;
+import type { Importer } from '../types';
 
 /**
  * Returns true if the expression is of form `exports.foo = ...;` or
  * `modules.exports = ...;`.
  */
-export default function isExportsOrModuleAssignment(path: NodePath): boolean {
+export default function isExportsOrModuleAssignment(
+  path: NodePath,
+  importer: Importer,
+): boolean {
   if (t.ExpressionStatement.check(path.node)) {
     path = path.get('expression');
   }
@@ -27,7 +29,7 @@ export default function isExportsOrModuleAssignment(path: NodePath): boolean {
     return false;
   }
 
-  const exprArr = expressionTo.Array(path.get('left'));
+  const exprArr = expressionTo.Array(path.get('left'), importer);
   return (
     (exprArr[0] === 'module' && exprArr[1] === 'exports') ||
     exprArr[0] === 'exports'

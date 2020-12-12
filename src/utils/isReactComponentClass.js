@@ -7,13 +7,12 @@
  * @flow
  */
 
-import types from 'ast-types';
+import { namedTypes as t } from 'ast-types';
 import isReactModuleName from './isReactModuleName';
 import match from './match';
 import resolveToModule from './resolveToModule';
 import resolveToValue from './resolveToValue';
-
-const { namedTypes: t } = types;
+import type { Importer } from '../types';
 
 function isRenderMethod(node) {
   const isProperty = node.type === 'ClassProperty';
@@ -30,7 +29,10 @@ function isRenderMethod(node) {
  * Returns `true` of the path represents a class definition which either extends
  * `React.Component` or has a superclass and implements a `render()` method.
  */
-export default function isReactComponentClass(path: NodePath): boolean {
+export default function isReactComponentClass(
+  path: NodePath,
+  importer: Importer,
+): boolean {
   const node = path.node;
   if (!t.ClassDeclaration.check(node) && !t.ClassExpression.check(node)) {
     return false;
@@ -42,12 +44,12 @@ export default function isReactComponentClass(path: NodePath): boolean {
   }
 
   // React.Component or React.PureComponent
-  const superClass = resolveToValue(path.get('superClass'));
+  const superClass = resolveToValue(path.get('superClass'), importer);
   if (
     match(superClass.node, { property: { name: 'Component' } }) ||
     match(superClass.node, { property: { name: 'PureComponent' } })
   ) {
-    const module = resolveToModule(superClass);
+    const module = resolveToModule(superClass, importer);
     if (module && isReactModuleName(module)) {
       return true;
     }

@@ -9,7 +9,7 @@
 
 /*eslint no-use-before-define: 0*/
 
-import types from 'ast-types';
+import { namedTypes as t } from 'ast-types';
 import { getDocblock } from '../utils/docblock';
 import getMembers from './getMembers';
 import getPropertyName from './getPropertyName';
@@ -18,20 +18,18 @@ import printValue from './printValue';
 import resolveToValue from './resolveToValue';
 import resolveObjectKeysToArray from './resolveObjectKeysToArray';
 import resolveObjectValuesToArray from './resolveObjectValuesToArray';
-import type { PropTypeDescriptor, PropDescriptor } from '../types';
+import type { PropTypeDescriptor, PropDescriptor, Importer } from '../types';
 
-const { namedTypes: t } = types;
-
-function getEnumValues(path) {
+function getEnumValues(path: NodePath, importer: Importer) {
   const values = [];
 
   path.get('elements').each(function(elementPath) {
     if (t.SpreadElement.check(elementPath.node)) {
-      const value = resolveToValue(elementPath.get('argument'));
+      const value = resolveToValue(elementPath.get('argument'), importer);
 
       if (t.ArrayExpression.check(value.node)) {
         // if the SpreadElement resolved to an Array, add all their elements too
-        return values.push(...getEnumValues(value));
+        return values.push(...getEnumValues(value, importer));
       } else {
         // otherwise we'll just print the SpreadElement itself
         return values.push({
@@ -42,7 +40,7 @@ function getEnumValues(path) {
     }
 
     // try to resolve the array element to it's value
-    const value = resolveToValue(elementPath);
+    const value = resolveToValue(elementPath, importer);
     return values.push({
       value: printValue(value),
       computed: !t.Literal.check(value.node),
@@ -52,33 +50,34 @@ function getEnumValues(path) {
   return values;
 }
 
-function getPropTypeOneOf(argumentPath) {
+function getPropTypeOneOf(argumentPath: NodePath, importer: Importer) {
   const type: PropTypeDescriptor = { name: 'enum' };
-  let value = resolveToValue(argumentPath);
+  let value = resolveToValue(argumentPath, importer);
   if (!t.ArrayExpression.check(value.node)) {
     value =
-      resolveObjectKeysToArray(value) || resolveObjectValuesToArray(value);
+      resolveObjectKeysToArray(value, importer) ||
+      resolveObjectValuesToArray(value, importer);
     if (value) {
-      type.value = getEnumValues(value);
+      type.value = getEnumValues(value, importer);
     } else {
       // could not easily resolve to an Array, let's print the original value
       type.computed = true;
       type.value = printValue(argumentPath);
     }
   } else {
-    type.value = getEnumValues(value);
+    type.value = getEnumValues(value, importer);
   }
   return type;
 }
 
-function getPropTypeOneOfType(argumentPath) {
+function getPropTypeOneOfType(argumentPath: NodePath, importer: Importer) {
   const type: PropTypeDescriptor = { name: 'union' };
   if (!t.ArrayExpression.check(argumentPath.node)) {
     type.computed = true;
     type.value = printValue(argumentPath);
   } else {
     type.value = argumentPath.get('elements').map(function(itemPath) {
-      const descriptor: PropTypeDescriptor = getPropType(itemPath);
+      const descriptor: PropTypeDescriptor = getPropType(itemPath, importer);
       const docs = getDocblock(itemPath);
       if (docs) {
         descriptor.description = docs;
@@ -89,7 +88,7 @@ function getPropTypeOneOfType(argumentPath) {
   return type;
 }
 
-function getPropTypeArrayOf(argumentPath) {
+function getPropTypeArrayOf(argumentPath: NodePath, importer: Importer) {
   const type: PropTypeDescriptor = { name: 'arrayOf' };
 
   const docs = getDocblock(argumentPath);
@@ -97,7 +96,7 @@ function getPropTypeArrayOf(argumentPath) {
     type.description = docs;
   }
 
-  const subType = getPropType(argumentPath);
+  const subType = getPropType(argumentPath, importer);
 
   if (subType.name === 'unknown') {
     type.value = printValue(argumentPath);
@@ -108,7 +107,7 @@ function getPropTypeArrayOf(argumentPath) {
   return type;
 }
 
-function getPropTypeObjectOf(argumentPath) {
+function getPropTypeObjectOf(argumentPath: NodePath, importer: Importer) {
   const type: PropTypeDescriptor = { name: 'objectOf' };
 
   const docs = getDocblock(argumentPath);
@@ -116,7 +115,7 @@ function getPropTypeObjectOf(argumentPath) {
     type.description = docs;
   }
 
-  const subType = getPropType(argumentPath);
+  const subType = getPropType(argumentPath, importer);
 
   if (subType.name === 'unknown') {
     type.value = printValue(argumentPath);
@@ -130,10 +129,14 @@ function getPropTypeObjectOf(argumentPath) {
 /**
  * Handles shape and exact prop types
  */
-function getPropTypeShapish(name, argumentPath) {
+function getPropTypeShapish(
+  name: 'shape' | 'exact',
+  argumentPath: NodePath,
+  importer: Importer,
+) {
   const type: PropTypeDescriptor = { name };
   if (!t.ObjectExpression.check(argumentPath.node)) {
-    argumentPath = resolveToValue(argumentPath);
+    argumentPath = resolveToValue(argumentPath, importer);
   }
 
   if (t.ObjectExpression.check(argumentPath.node)) {
@@ -144,10 +147,11 @@ function getPropTypeShapish(name, argumentPath) {
         return;
       }
 
-      const propertyName = getPropertyName(propertyPath);
+      const propertyName = getPropertyName(propertyPath, importer);
       if (!propertyName) return;
       const descriptor: PropDescriptor | PropTypeDescriptor = getPropType(
         propertyPath.get('value'),
+        importer,
       );
       const docs = getDocblock(propertyPath);
       if (docs) {
@@ -167,7 +171,8 @@ function getPropTypeShapish(name, argumentPath) {
   return type;
 }
 
-function getPropTypeInstanceOf(argumentPath) {
+// eslint-disable-next-line no-unused-vars
+function getPropTypeInstanceOf(argumentPath: NodePath, importer: Importer) {
   return {
     name: 'instanceOf',
     value: printValue(argumentPath),
@@ -188,15 +193,15 @@ const simplePropTypes = [
   'elementType',
 ];
 
-const propTypes = {
-  oneOf: getPropTypeOneOf,
-  oneOfType: getPropTypeOneOfType,
-  instanceOf: getPropTypeInstanceOf,
-  arrayOf: getPropTypeArrayOf,
-  objectOf: getPropTypeObjectOf,
-  shape: getPropTypeShapish.bind(null, 'shape'),
-  exact: getPropTypeShapish.bind(null, 'exact'),
-};
+const propTypes = new Map([
+  ['oneOf', getPropTypeOneOf],
+  ['oneOfType', getPropTypeOneOfType],
+  ['instanceOf', getPropTypeInstanceOf],
+  ['arrayOf', getPropTypeArrayOf],
+  ['objectOf', getPropTypeObjectOf],
+  ['shape', getPropTypeShapish.bind(null, 'shape')],
+  ['exact', getPropTypeShapish.bind(null, 'exact')],
+]);
 
 /**
  * Tries to identify the prop type by inspecting the path for known
@@ -206,7 +211,10 @@ const propTypes = {
  *
  * If there is no match, "custom" is returned.
  */
-export default function getPropType(path: NodePath): PropTypeDescriptor {
+export default function getPropType(
+  path: NodePath,
+  importer: Importer,
+): PropTypeDescriptor {
   let descriptor;
   getMembers(path, true).some(member => {
     const node = member.path.node;
@@ -220,8 +228,9 @@ export default function getPropType(path: NodePath): PropTypeDescriptor {
       if (simplePropTypes.includes(name)) {
         descriptor = { name };
         return true;
-      } else if (propTypes.hasOwnProperty(name) && member.argumentsPath) {
-        descriptor = propTypes[name](member.argumentsPath.get(0));
+      } else if (propTypes.has(name) && member.argumentsPath) {
+        // $FlowIssue
+        descriptor = propTypes.get(name)(member.argumentsPath.get(0), importer);
         return true;
       }
     }
@@ -233,12 +242,14 @@ export default function getPropType(path: NodePath): PropTypeDescriptor {
     } else if (
       t.CallExpression.check(node) &&
       t.Identifier.check(node.callee) &&
-      propTypes.hasOwnProperty(node.callee.name)
+      propTypes.has(node.callee.name)
     ) {
-      descriptor = propTypes[node.callee.name](path.get('arguments', 0));
+      // $FlowIssue
+      descriptor = propTypes.get(node.callee.name)(path.get('arguments', 0));
     } else {
       descriptor = { name: 'custom', raw: printValue(path) };
     }
   }
+  // $FlowIssue
   return descriptor;
 }

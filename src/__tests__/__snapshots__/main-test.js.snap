@@ -1008,9 +1008,6 @@ Object {
 
 exports[`main fixtures processes component "component_19.js" without errors 1`] = `
 Object {
-  "composes": Array [
-    undefined,
-  ],
   "description": "",
   "displayName": "Component",
   "methods": Array [],
@@ -1398,7 +1395,26 @@ Object {
       "description": "This is a method",
       "docblock": "This is a method",
       "modifiers": Array [],
-      "name": "method",
+      "name": "foo",
+      "params": Array [
+        Object {
+          "name": "a",
+          "type": Object {
+            "name": "string",
+          },
+        },
+      ],
+      "returns": Object {
+        "type": Object {
+          "name": "string",
+        },
+      },
+    },
+    Object {
+      "description": "This is a public method",
+      "docblock": "This is a public method",
+      "modifiers": Array [],
+      "name": "bar",
       "params": Array [
         Object {
           "name": "a",
@@ -1447,6 +1463,23 @@ Object {
 }
 `;
 
+exports[`main fixtures processes component "component_29.js" without errors 1`] = `
+Object {
+  "description": "",
+  "displayName": "MyComponent",
+  "methods": Array [],
+  "props": Object {
+    "prop": Object {
+      "description": "",
+      "flowType": Object {
+        "name": "T",
+      },
+      "required": true,
+    },
+  },
+}
+`;
+
 exports[`main fixtures processes component "component_29.tsx" without errors 1`] = `
 Object {
   "description": "",
@@ -1460,6 +1493,424 @@ Object {
         "name": "STRING_VALS[undefined]",
         "raw": "typeof STRING_VALS[number]",
       },
+    },
+  },
+}
+`;
+
+exports[`main fixtures processes component "component_30.js" without errors 1`] = `
+Object {
+  "description": "",
+  "displayName": "MyComponent",
+  "methods": Array [],
+  "props": Object {
+    "prop": Object {
+      "description": "",
+      "flowType": Object {
+        "name": "string",
+      },
+      "required": true,
+    },
+  },
+}
+`;
+
+exports[`main fixtures processes component "component_31.js" without errors 1`] = `
+Object {
+  "description": "",
+  "displayName": "MyComponent",
+  "methods": Array [],
+  "props": Object {
+    "prop": Object {
+      "description": "",
+      "flowType": Object {
+        "name": "T",
+      },
+      "required": true,
+    },
+  },
+}
+`;
+
+exports[`main fixtures processes component "component_32.js" without errors 1`] = `
+Object {
+  "description": "",
+  "displayName": "Segments",
+  "methods": Array [
+    Object {
+      "docblock": null,
+      "modifiers": Array [],
+      "name": "foo",
+      "params": Array [
+        Object {
+          "name": "props",
+          "optional": undefined,
+          "type": Object {
+            "alias": "Props",
+            "name": "signature",
+            "raw": "{
+  segments: Array<T>,
+}",
+            "signature": Object {
+              "properties": Array [
+                Object {
+                  "key": "segments",
+                  "value": Object {
+                    "elements": Array [
+                      Object {
+                        "name": "T",
+                      },
+                    ],
+                    "name": "Array",
+                    "raw": "Array<T>",
+                    "required": true,
+                  },
+                },
+              ],
+            },
+            "type": "object",
+          },
+        },
+      ],
+      "returns": null,
+    },
+  ],
+  "props": Object {
+    "segments": Object {
+      "description": "",
+      "flowType": Object {
+        "elements": Array [
+          Object {
+            "name": "T",
+          },
+        ],
+        "name": "Array",
+        "raw": "Array<T>",
+      },
+      "required": true,
+    },
+  },
+}
+`;
+
+exports[`main fixtures processes component "component_33.tsx" without errors 1`] = `
+Object {
+  "description": "This is a typescript component with imported prop types",
+  "displayName": "ImportedExtendedComponent",
+  "methods": Array [],
+  "props": Object {
+    "bar": Object {
+      "description": "",
+      "required": true,
+      "tsType": Object {
+        "name": "number",
+      },
+    },
+    "foo": Object {
+      "description": "",
+      "required": true,
+      "tsType": Object {
+        "name": "string",
+      },
+    },
+  },
+}
+`;
+
+exports[`main fixtures processes component "component_34.js" without errors 1`] = `
+Object {
+  "description": "",
+  "displayName": "CustomButton",
+  "methods": Array [],
+  "props": Object {
+    "children": Object {
+      "description": "",
+      "required": true,
+      "type": Object {
+        "name": "string",
+      },
+    },
+    "color": Object {
+      "description": "",
+      "required": false,
+      "type": Object {
+        "name": "string",
+      },
+    },
+    "onClick": Object {
+      "description": "",
+      "required": false,
+      "type": Object {
+        "name": "func",
+      },
+    },
+    "style": Object {
+      "description": "",
+      "required": false,
+      "type": Object {
+        "name": "object",
+      },
+    },
+  },
+}
+`;
+
+exports[`main fixtures processes component "component_35.js" without errors 1`] = `
+Object {
+  "description": "",
+  "displayName": "SuperCustomButton",
+  "methods": Array [],
+  "props": Object {
+    "children": Object {
+      "description": "",
+      "required": true,
+      "type": Object {
+        "name": "string",
+      },
+    },
+    "onClick": Object {
+      "description": "",
+      "required": false,
+      "type": Object {
+        "name": "func",
+      },
+    },
+    "style": Object {
+      "description": "",
+      "required": false,
+      "type": Object {
+        "name": "object",
+      },
+    },
+  },
+}
+`;
+
+exports[`main fixtures processes component "component_36.js" without errors 1`] = `
+Object {
+  "description": "",
+  "displayName": "SuperDuperCustomButton",
+  "methods": Array [],
+  "props": Object {
+    "children": Object {
+      "description": "",
+      "required": true,
+      "type": Object {
+        "name": "string",
+      },
+    },
+    "onClick": Object {
+      "description": "",
+      "required": false,
+      "type": Object {
+        "name": "func",
+      },
+    },
+    "style": Object {
+      "description": "",
+      "required": false,
+      "type": Object {
+        "name": "object",
+      },
+    },
+  },
+}
+`;
+
+exports[`main fixtures processes component "component_37.js" without errors 1`] = `
+Object {
+  "description": "",
+  "displayName": "SuperDuperCustomButton",
+  "methods": Array [],
+  "props": Object {
+    "children": Object {
+      "description": "",
+      "required": true,
+      "type": Object {
+        "name": "string",
+      },
+    },
+    "onClick": Object {
+      "description": "",
+      "required": false,
+      "type": Object {
+        "name": "func",
+      },
+    },
+    "style": Object {
+      "description": "",
+      "required": false,
+      "type": Object {
+        "name": "object",
+      },
+    },
+  },
+}
+`;
+
+exports[`main fixtures processes component "component_38.js" without errors 1`] = `
+Object {
+  "description": "",
+  "displayName": "SuperDuperCustomButton",
+  "methods": Array [],
+  "props": Object {
+    "children": Object {
+      "description": "",
+      "required": true,
+      "type": Object {
+        "name": "string",
+      },
+    },
+    "onClick": Object {
+      "description": "",
+      "required": false,
+      "type": Object {
+        "name": "func",
+      },
+    },
+    "style": Object {
+      "description": "",
+      "required": false,
+      "type": Object {
+        "name": "object",
+      },
+    },
+  },
+}
+`;
+
+exports[`main fixtures processes component "component_39.tsx" without errors 1`] = `
+Object {
+  "description": "This is a typescript component with imported prop types",
+  "displayName": "ImportedComponent",
+  "methods": Array [],
+  "props": Object {
+    "foo": Object {
+      "description": "",
+      "required": true,
+      "tsType": Object {
+        "name": "string",
+      },
+    },
+  },
+}
+`;
+
+exports[`main fixtures processes component "component_40.js" without errors 1`] = `
+Object {
+  "description": "",
+  "displayName": "SuperDuperCustomButton",
+  "methods": Array [],
+  "props": Object {
+    "size": Object {
+      "defaultValue": Object {
+        "computed": true,
+        "value": "Sizes.EXTRA_LARGE",
+      },
+      "description": "",
+      "required": false,
+      "type": Object {
+        "computed": true,
+        "name": "enum",
+        "value": "Object.values(Sizes)",
+      },
+    },
+  },
+}
+`;
+
+exports[`main fixtures processes component "flow-export-type.js" without errors 1`] = `
+Object {
+  "description": "This is a Flow class component",
+  "displayName": "FlowComponent",
+  "methods": Array [
+    Object {
+      "docblock": null,
+      "modifiers": Array [],
+      "name": "foo",
+      "params": Array [
+        Object {
+          "name": "a",
+          "optional": undefined,
+          "type": Object {
+            "name": "string",
+          },
+        },
+      ],
+      "returns": Object {
+        "type": Object {
+          "name": "string",
+        },
+      },
+    },
+    Object {
+      "docblock": null,
+      "modifiers": Array [],
+      "name": "bar",
+      "params": Array [
+        Object {
+          "name": "a",
+          "optional": undefined,
+          "type": Object {
+            "name": "string",
+          },
+        },
+      ],
+      "returns": Object {
+        "type": Object {
+          "name": "string",
+        },
+      },
+    },
+  ],
+  "props": Object {
+    "foo": Object {
+      "description": "",
+      "flowType": Object {
+        "name": "string",
+      },
+      "required": true,
+    },
+  },
+}
+`;
+
+exports[`main fixtures processes component "flow-import-type.js" without errors 1`] = `
+Object {
+  "description": "This is a Flow component with imported prop types",
+  "displayName": "ImportedComponent",
+  "methods": Array [],
+  "props": Object {
+    "foo": Object {
+      "description": "",
+      "flowType": Object {
+        "name": "string",
+      },
+      "required": true,
+    },
+  },
+}
+`;
+
+exports[`main fixtures processes component "flow-spread-import-type.js" without errors 1`] = `
+Object {
+  "description": "This is a Flow component with imported prop types",
+  "displayName": "ImportedExtendedComponent",
+  "methods": Array [],
+  "props": Object {
+    "bar": Object {
+      "description": "",
+      "flowType": Object {
+        "name": "number",
+      },
+      "required": true,
+    },
+    "foo": Object {
+      "description": "",
+      "flowType": Object {
+        "name": "string",
+      },
+      "required": true,
     },
   },
 }

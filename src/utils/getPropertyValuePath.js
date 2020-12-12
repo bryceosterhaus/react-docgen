@@ -7,10 +7,9 @@
  * @flow
  */
 
-import types from 'ast-types';
+import { namedTypes as t } from 'ast-types';
 import getPropertyName from './getPropertyName';
-
-const { namedTypes: t } = types;
+import type { Importer } from '../types';
 
 /**
  * Given an ObjectExpression, this function returns the path of the value of
@@ -19,11 +18,14 @@ const { namedTypes: t } = types;
 export default function getPropertyValuePath(
   path: NodePath,
   propertyName: string,
+  importer: Importer,
 ): ?NodePath {
   t.ObjectExpression.assert(path.node);
 
   return path
     .get('properties')
-    .filter(propertyPath => getPropertyName(propertyPath) === propertyName)
+    .filter(
+      propertyPath => getPropertyName(propertyPath, importer) === propertyName,
+    )
     .map(propertyPath => propertyPath.get('value'))[0];
 }
